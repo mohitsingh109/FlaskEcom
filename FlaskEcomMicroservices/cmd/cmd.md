@@ -78,8 +78,6 @@ minikube image build -t product_service:latest .
 
 kubectl apply -f k8s/product-service-deployment.yaml
 
-kubectl exec -it postgres-f69dc968d-xs8hh -- /bin/bash
-
 Delete: kubectl delete deployment product-service
 ```
 
@@ -90,9 +88,6 @@ minikube image build -t cart_service:latest .
 kubectl apply -f k8s/cart-service-deployment.yaml
 
 Delete: kubectl delete deployment cart-service
-
-kubectl exec -it postgres-f69dc968d-xs8hh -- /bin/bash
-
 
 ```
 
