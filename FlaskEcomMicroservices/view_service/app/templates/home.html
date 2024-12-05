@@ -50,62 +50,24 @@
 <!-- Categories Section -->
 <div class="container">
     <div class="row">
-        <div class="col-md-2">
-            <div class="list-group" id="category-list">
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-shopping-basket" aria-hidden="true"></i>
-                    <span class="link-name">Supermarket</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-user" aria-hidden="true"></i>
-                    <span class="link-name">Health & Beauty</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa-solid fa-comment"></i>
-                    <span class="link-name">Home & Office</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-camera" aria-hidden="true"></i>
-                    <span class="link-name">Fashion</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-audio-description" aria-hidden="true"></i>
-                    <span class="link-name">Electronics</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-cubes" aria-hidden="true"></i>
-                    <span class="link-name">Gaming</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-child" aria-hidden="true"></i>
-                    <span class="link-name">Baby Products</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-bicycle" aria-hidden="true"></i>
-                    <span class="link-name">Sporting Goods</span>
-                </a>
-                <a href="" class="list-group-item list-group-item-action">
-                    <i class="fa fa-binoculars" aria-hidden="true"></i>
-                    <span class="link-name">Garden & Outdoor</span>
-                </a>
-            </div>
-        </div>
-
         <!-- Product Display Section -->
         <div class="col-md-10">
             <div class="row">
                 {% for item in items %}
                 <div class="col-md-3 mb-4">
                     <div class="card shadow-lg rounded-lg product-card">
-                        <img src="{{ url_for('static', filename='media/' + item.product_picture.split('/')[-1]) }}" class="card-img-top" alt="{{ item.product_name }}"
+                        <img src="{{ url_for('static', filename='media/' + item.product_picture.split('/')[-1]) }}"
+                            class="card-img-top" alt="{{ item.product_name }}"
                             style="height: 250px; object-fit: cover; border-top-left-radius: 10px; border-top-right-radius: 10px;">
                         <div class="card-body">
                             <h5 class="card-title text-truncate">{{ item.product_name }}</h5>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="badge bg-danger">{{ item.in_stock }} Items Left</span>
                                 <div class="product-price">
-                                    <strong>Ksh {{ item.current_price }}</strong>
-                                    <small class="text-muted"><strike>Ksh {{ item.previous_price }}</strike></small>
+                                    <br />
+                                    <strong>$ {{ item.current_price }}</strong>
+                                    <br />
+                                    <small class="text-muted"><strike>$ {{ item.previous_price }}</strike></small>
                                 </div>
                             </div>
                             <a href="/add-to-cart/{{ item.id }}" class="btn btn-primary w-100 mt-3">Add to Cart</a>
