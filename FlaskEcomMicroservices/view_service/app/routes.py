@@ -87,6 +87,10 @@ ORDER_SERVICE_URL = 'http://order-service:5004'
 
 @app.route('/', methods=['GET'])
 def home():
+
+    if current_user.is_authenticated and current_user.id == 1:
+        return redirect('/admin-page')
+
     try:
         response = requests.get(f"{PRODUCT_SERVICE_URL}/products/flash-sale")
         response.raise_for_status()  # Raises an error for non-2xx responses

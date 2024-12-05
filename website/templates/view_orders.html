@@ -2,60 +2,50 @@
 
 {% block title %} View Orders {% endblock %}
 
-
 {% block body %}
 
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
+<div class="container my-4">
+    <h2 class="text-center text-white mb-4">Orders List</h2>
 
-            <th scope="col">Order ID</th>
-            <th scope="col">Payment ID</th>
-
-            <th scope="col">UserName</th>
-            <th scope="col">Customer Email</th>
-
-            <th scope="col">Product Name</th>
-            <th scope="col">Price</th>
-            <th scope="col">Quantity</th>
-
-            <th scope="col">Picture</th>
-            <th scope="col">Status</th>
-            <th scope="col">Action</th>
-
-
-        </tr>
-    </thead>
-
-    <tbody>
-
+    {% if orders|length == 0 %}
+    <div class="alert alert-info text-center">No Orders Available</div>
+    {% else %}
+    <div class="row">
         {% for order in orders %}
+        <div class="col-md-4 mb-4">
+            <div class="card border-primary">
+                <div class="card-header text-center">
+                    <h5 class="card-title">Order ID: {{ order.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Payment ID: {{ order.payment_id }}</h6>
+                    <p><strong>Username:</strong> {{ order.customer.username }}</p>
+                    <p><strong>Email:</strong> {{ order.customer.email }}</p>
+                    <p><strong>Product Name:</strong> {{ order.product.product_name }}</p>
+                    <p><strong>Price:</strong> {{ order.price }}</p>
+                    <p><strong>Quantity:</strong> {{ order.quantity }}</p>
 
-        <tr>
-            <td>{{ order.id }}</td>
-            <td>{{ order.payment_id }}</td>
+                    <div class="text-center mb-3">
+                        <img src="{{ order.product.product_picture }}" alt="Product Image" class="img-fluid rounded"
+                            style="max-width: 100px;">
+                    </div>
 
-            <td>{{ order.customer.username }}</td>
-            <td>{{ order.customer.email }}</td>
-            <td>{{ order.product.product_name }}</td>
-            <td>{{ order.price }}</td>
-            <td>{{ order.quantity }}</td>
+                    <p><strong>Status:</strong>
+                        <span class="badge"
+                            style="background-color: {% if order.status == 'Pending' %} #f0ad4e; {% elif order.status == 'Completed' %} #28a745; {% else %} #dc3545; {% endif %}; color: white;">
+                            {{ order.status }}
+                        </span>
 
-            <td><img src="{{ order.product.product_picture }}" alt="" style="height: 50px; width: 50px; border-radius: 2px;"></td>
-
-
-            <td>{{ order.status}}</td>
-
-            <td>
-                <a href="/update-order/{{ order.id }}">Update Status</a>
-            </td>
-
-
-        </tr>
-
+                    </p>
+                </div>
+                <div class="card-footer text-center">
+                    <a href="/update-order/{{ order.id }}" class="btn btn-sm btn-info">Update Status</a>
+                </div>
+            </div>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
-
+    </div>
+    {% endif %}
+</div>
 
 {% endblock %}

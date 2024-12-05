@@ -3,28 +3,21 @@
 {% block title %} Customers {% endblock %}
 
 {% block body %}
-
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
-            <th scope="col">Customer ID</th>
-            <th scope="col">Username</th>
-            <th scope="col">Email</th>
-            <th scope="col">Date Joined</th>
-
-        </tr>
-
-    </thead>
-    <tbody>
+<div class="container my-5">
+    <h1 class="text-center mb-4">Customer List</h1>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for customer in customers %}
-        <tr>
-        <td>{{ customer.id }}</td>
-        <td>{{ customer.username }}</td>
-        <td>{{ customer.email }}</td>
-        <td>{{ customer.date_joined }}</td>
-        </tr>
+        <div class="col">
+            <div class="card border-primary shadow-sm rounded">
+                <div class="card-body">
+                    <h5 class="card-title">{{ customer.username }}</h5>
+                    <p class="card-text"><strong>Email:</strong> {{ customer.email }}</p>
+                    <p class="card-text"><strong>Customer ID:</strong> {{ customer.id }}</p>
+                    <p class="card-text"><strong>Date Joined:</strong> {{ customer.date_joined }}</p>
+                </div>
+            </div>
+        </div>
         {% endfor %}
-    </tbody>
-</table>
-
+    </div>
+</div>
 {% endblock %}

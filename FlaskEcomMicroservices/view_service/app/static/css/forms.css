@@ -78,3 +78,39 @@ body{
     border: 1px solid #fff;
 }
 
+/* Custom Checkbox Styles */
+.custom-checkbox {
+    position: relative;
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    background-color: #fff; /* White background for checkbox */
+    border: 2px solid #ccc; /* Light grey border */
+    border-radius: 5px; /* Rounded corners for the checkbox */
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* When the checkbox is checked */
+.custom-checkbox:checked {
+    background-color: #007bff; /* Blue background when checked */
+    border-color: #007bff; /* Blue border */
+}
+
+/* Custom Checkmark (using ::before pseudo-element) */
+.custom-checkbox:checked::before {
+    content: '\2714'; /* Unicode for checkmark */
+    position: absolute;
+    top: 0;
+    left: 4px;
+    color: white; /* White checkmark */
+    font-size: 14px;
+}
+
+/* Ensure the checkbox looks like a form-check input when unchecked */
+.custom-checkbox:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Focus shadow */
+}
+
+.custom-checkbox:hover {
+    border-color: #0056b3; /* Darker blue border on hover */
+}

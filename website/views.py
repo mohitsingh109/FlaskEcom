@@ -6,7 +6,6 @@ from flask_login import login_required, current_user
 from . import db
 from intasend import APIService
 
-
 views = Blueprint('views', __name__)
 
 API_PUBLISHABLE_KEY = 'YOUR_PUBLISHABLE_KEY'
@@ -16,11 +15,12 @@ API_TOKEN = 'YOUR_API_TOKEN'
 
 @views.route('/')
 def home():
-
+    if current_user.is_authenticated and current_user.id == 1:
+        return redirect('/admin-page')
     items = Product.query.filter_by(flash_sale=True)
 
     return render_template('home.html', items=items, cart=Cart.query.filter_by(customer_link=current_user.id).all()
-                           if current_user.is_authenticated else [])
+    if current_user.is_authenticated else [])
 
 
 @views.route('/add-to-cart/<int:item_id>')
@@ -32,11 +32,11 @@ def add_to_cart(item_id):
         try:
             item_exists.quantity = item_exists.quantity + 1
             db.session.commit()
-            flash(f' Quantity of { item_exists.product.product_name } has been updated')
+            flash(f' Quantity of {item_exists.product.product_name} has been updated')
             return redirect(request.referrer)
         except Exception as e:
             print('Quantity not Updated', e)
-            flash(f'Quantity of { item_exists.product.product_name } not updated')
+            flash(f'Quantity of {item_exists.product.product_name} not updated')
             return redirect(request.referrer)
 
     new_cart_item = Cart()
@@ -63,7 +63,7 @@ def show_cart():
     for item in cart:
         amount += item.product.current_price * item.quantity
 
-    return render_template('cart.html', cart=cart, amount=amount, total=amount+200)
+    return render_template('cart.html', cart=cart, amount=amount, total=amount + 200)
 
 
 @views.route('/pluscart')
@@ -156,7 +156,7 @@ def place_order():
             #                                                        amount=total + 200, narrative='Purchase of goods')
 
             create_order_response = {
-                'invoice' : {
+                'invoice': {
                     'state': 'PENDING'
                 },
                 'id': uuid.uuid4()
@@ -206,20 +206,8 @@ def search():
     if request.method == 'POST':
         search_query = request.form.get('search')
         items = Product.query.filter(Product.product_name.ilike(f'%{search_query}%')).all()
-        return render_template('search.html', items=items, cart=Cart.query.filter_by(customer_link=current_user.id).all()
-                           if current_user.is_authenticated else [])
+        return render_template('search.html', items=items,
+                               cart=Cart.query.filter_by(customer_link=current_user.id).all()
+                               if current_user.is_authenticated else [])
 
     return render_template('search.html')
-
-
-
-
-
-
-
-
-
-
-
-
-

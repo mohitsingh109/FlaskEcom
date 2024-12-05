@@ -4,6 +4,8 @@
 IMAGE_NAME="view_service:latest"
 DEPLOYMENT_FILE="k8s/view-service-deployment.yaml"
 
+kubectl delete deployment view-service
+
 # Build Docker image using Minikube
 echo "Building Docker image: $IMAGE_NAME"
 minikube image build -t $IMAGE_NAME .

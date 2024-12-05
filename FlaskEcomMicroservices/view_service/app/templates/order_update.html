@@ -2,27 +2,30 @@
 
 {% block title %} Update Order {% endblock %}
 
-
 {% block body %}
+<div class="container my-5">
+    <h2 class="text-center text-white mb-4">Update Order Status</h2>
 
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
-            <th scope="col">Order Status</th>
-            <th scope="col">Order Status</th>
-        </tr>
-    </thead>
+    <form action="" method="POST" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
 
-    <tbody>
-        <tr>
-            <form action="" method="POST" enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
+        <div class="card shadow-lg p-4">
+            <div class="card-body">
+                <h4 class="card-title mb-4 text-center">Order Details</h4>
 
-                <td>{{ form.order_status }}</td>
-                <td>{{ form.update() }}</td>
-            </form>
-        </tr>
-    </tbody>
-</table>
+                <div class="row mb-3">
+                    <label for="order_status" class="col-md-4 col-form-label">Order Status</label>
+                    <div class="col-md-8">
+                        {{ form.order_status(class="form-select", aria_label="Order Status") }}
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center mt-4">
+                    {{ form.update(class="btn btn-primary btn-lg w-50", style="transition: all 0.3s ease;") }}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 
 {% endblock %}

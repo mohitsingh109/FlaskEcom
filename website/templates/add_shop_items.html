@@ -2,39 +2,66 @@
 
 {% block title %} Add Shop Items {% endblock %}
 
-
 {% block body %}
+<div class="container my-5">
+    <h2 class="text-center text-light mb-4">Add New Shop Item</h2>
+    <div class="card shadow-sm p-4" style="background-color: #f8f9fa;">
+        <form action="" method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
 
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
-            <th scope="col">Product Name</th>
-            <th scope="col">Previous Price</th>
-            <th scope="col">Current Price</th>
-            <th scope="col">In Stock</th>
-            <th scope="col">Picture</th>
-            <th scope="col">Flash Sale</th>
-            <th scope="col">Add</th>
+            <div class="row mb-3">
+                <label for="product_name" class="col-sm-2 col-form-label text-dark">Product Name</label>
+                <div class="col-sm-10">
+                    {{ form.product_name(class="form-control", placeholder="Enter product name", style="border-color:
+                    #6c757d;") }}
+                </div>
+            </div>
 
-        </tr>
-    </thead>
+            <div class="row mb-3">
+                <label for="previous_price" class="col-sm-2 col-form-label text-dark">Previous Price</label>
+                <div class="col-sm-10">
+                    {{ form.previous_price(class="form-control", placeholder="Enter previous price",
+                    style="border-color: #6c757d;") }}
+                </div>
+            </div>
 
-    <tbody>
-        <tr>
-            <form action="" method="POST", enctype="multipart/form-data">
-                {{ form.hidden_tag() }}
+            <div class="row mb-3">
+                <label for="current_price" class="col-sm-2 col-form-label text-dark">Current Price</label>
+                <div class="col-sm-10">
+                    {{ form.current_price(class="form-control", placeholder="Enter current price", style="border-color:
+                    #6c757d;") }}
+                </div>
+            </div>
 
-                <td>{{ form.product_name }}</td>
-                <td>{{ form.previous_price }}</td>
-                <td>{{ form.current_price }}</td>
-                <td>{{ form.in_stock }}</td>
-                <td>{{ form.product_picture() }}</td>
-                <td>{{ form.flash_sale }}</td>
-                <td>{{ form.add_product() }}</td>
-            </form>
-        </tr>
-    </tbody>
-</table>
+            <div class="row mb-3">
+                <label for="in_stock" class="col-sm-2 col-form-label text-dark">In Stock</label>
+                <div class="col-sm-10">
+                    {{ form.in_stock(class="form-control", placeholder="Enter stock quantity", style="border-color:
+                    #6c757d;") }}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label for="product_picture" class="col-sm-2 col-form-label text-dark">Product Picture</label>
+                <div class="col-sm-10">
+                    {{ form.product_picture(class="form-control-file") }}
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <label for="flash_sale" class="col-sm-2 col-form-label text-dark">Flash Sale</label>
+                <div class="col-sm-10">
+                    <div class="form-check">
+                        {{ form.flash_sale(class="form-check-input custom-checkbox") }}
+                    </div>
+                </div>
+            </div>
 
 
+            <div class="text-center">
+                {{ form.add_product(class="btn btn-primary btn-lg") }}
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

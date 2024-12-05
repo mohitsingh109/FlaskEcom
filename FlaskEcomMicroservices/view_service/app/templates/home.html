@@ -2,20 +2,63 @@
 
 {% block title %} Home {% endblock %}
 
-
 {% block body %}
+<!-- Image Slider / Carousel at the Top -->
+<div id="productCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="0" class="active" aria-current="true"
+            aria-label="Slide 1"></button>
+        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+        <button type="button" data-bs-target="#productCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active">
+            <img src="../static/images/promo1.jpg" class="d-block w-100" alt="Promotion 1"
+                style="height: 400px; object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h5>Big Sale on Electronics</h5>
+                <p>Up to 50% off on top electronic brands!</p>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="../static/images/promo2.jpg" class="d-block w-100" alt="Promotion 2"
+                style="height: 400px; object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h5>Fashion Week</h5>
+                <p>Latest trends and styles available now.</p>
+            </div>
+        </div>
+        <div class="carousel-item">
+            <img src="../static/images/promo3.jpg" class="d-block w-100" alt="Promotion 3"
+                style="height: 400px; object-fit: cover;">
+            <div class="carousel-caption d-none d-md-block">
+                <h5>Supermarket Deals</h5>
+                <p>Special discounts on groceries and essentials.</p>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
 
-<div class="container text-center">
-    <div class="row" style="margin: 10px;">
-        <div class="col " style="margin: 3px;">
-            <div class="list-group" id="right1">
+<!-- Categories Section -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-2">
+            <div class="list-group" id="category-list">
                 <a href="" class="list-group-item list-group-item-action">
                     <i class="fa fa-shopping-basket" aria-hidden="true"></i>
                     <span class="link-name">Supermarket</span>
                 </a>
                 <a href="" class="list-group-item list-group-item-action">
                     <i class="fa fa-user" aria-hidden="true"></i>
-                    <span class="link-name">Health & Beuty</span>
+                    <span class="link-name">Health & Beauty</span>
                 </a>
                 <a href="" class="list-group-item list-group-item-action">
                     <i class="fa-solid fa-comment"></i>
@@ -45,131 +88,101 @@
                     <i class="fa fa-binoculars" aria-hidden="true"></i>
                     <span class="link-name">Garden & Outdoor</span>
                 </a>
-
             </div>
         </div>
 
-
-        <div class="col-md-7" style="margin: 3px;">
-            <img src="../static/images/center.gif" alt="" style="width: 600px; height: 365px; border-radius: 10px;">
-        </div>
-        <div class="col-md-2">
-            <div class="row" style="background-color: white; border-radius: 10px;">
-
-                <div class="row" style="display: flex; margin-top: 5px;">
-                    <div class="col">
-                        <img src="../static/images/help.png" alt=""
-                            style="width: 30px; height: 30px; margin-left: -30px;">
-                    </div>
-                    <div class="col">
-                        <h6
-                            style="font-family:'Times New Roman', Times, serif; font-size: 12px; margin-left: -40px; font-weight: 600;">
-                            HELP CENTER</h6>
-                        <p style="font-size: small; color: gray; margin-left: -30px; margin-top: -10px;">Customer care
-                        </p>
-                    </div>
-                </div>
-
-                <div class="row" style="display: flex; margin-top: 5px;">
-                    <div class="col">
-                        <img src="../static/images/return.png" alt=""
-                            style="width: 30px; height: 30px; margin-left: -30px;">
-                    </div>
-                    <div class="col">
-                        <h6
-                            style="font-family:'Times New Roman', Times, serif; font-size: 12px; margin-left: -40px; font-weight: 600;">
-                            EASY RETURN</h6>
-                        <p style="font-size: small; color: gray; margin-left: -30px; margin-top: -10px;">Quick Refund
-                        </p>
-                    </div>
-                </div>
-
-                <div class="row" style="display: flex; margin-top: 5px;">
-                    <div class="col">
-                        <img src="../static/images/payment.png" alt=""
-                            style="width: 30px; height: 30px; margin-left: -30px;">
-                    </div>
-                    <div class="col">
-                        <h6
-                            style="font-family:'Times New Roman', Times, serif; font-size: 12px; margin-left: -40px; font-weight: 600;">
-                            SELL ON AMAZON</h6>
-                        <p style="font-size: small; color: gray; margin-left: -30px; margin-top: -10px;">FBA Program</p>
-                    </div>
-                </div>
-            </div>
-            <div class="row" style="margin-top: 12px;">
-                <div class="col">
-                    <img src="../static/images/right2.gif" alt="" class="right2">
-                </div>
-
-            </div>
-        </div>
-    </div>
-</div>
-
-
-<div class="container text-center">
-    <div class="row" style="margin: 8px;">
-        <div class="col"
-            style="display: flex; background-color: white; border-radius: 10px; padding: 7px; margin: 5px;">
-            <img src="../static/images/techweek.png" alt="" style="width: 30px; height: 30px;">
-            <h6 style="margin: 4px">Tech Week</h6>
-        </div>
-        <div class="col"
-            style="display: flex; background-color: white; border-radius: 10px; padding: 7px; margin: 5px;">
-            <img src="../static/images/FreeDelivery.png" alt="" style="width: 30px; height: 30px;">
-            <h6 style="margin: 4px">Free Delivery</h6>
-        </div>
-        <div class="col"
-            style="display: flex; background-color: white; border-radius: 10px; padding: 7px; margin: 5px;">
-            <img src="../static/images/food.png" alt="" style="width: 30px; height: 30px;">
-            <h6 style="margin: 4px">Amazon Food</h6>
-        </div>
-        <div class="col"
-            style="display: flex; background-color: white; border-radius: 10px; padding: 7px; margin: 5px;">
-            <img src="../static/images/airtime.png" alt="" style="width: 30px; height: 30px;">
-            <h6 style="margin: 4px">Airtime & Bills</h6>
-        </div>
-
-    </div>
-</div>
-
-<div class="container text-center">
-    <div class="row" style="margin: 8px; background-color: rgb(219, 218, 218);" id="column">
-
-        {% for item in items %}
-
-        <div class="col" style="background-color: white;">
-
-           <img src="{{ url_for('static', filename='media/' + item.product_picture.split('/')[-1]) }}" alt="" style="height: 202px; width: 180px; border-radius: 10px;">
-
-
-            <div class="row" style="margin-top: 5px;">
-                <h6 style="color: gray;">{{ item.product_name }}</h6>
-            </div>
-
-            <div class="row" style="margin-top: 10px;">
-
-                <div class="col">
-
-                    <h5 style="font-weight: 600; font-family: 'Times New Roman', Times, serif;">Ksh {{ item.current_price }}</h5>
-                    <strike><p style="color: gray;">Ksh {{ item.previous_price}}</p></strike>
-                </div>
-
-                <div class="col">
-                    <a href="/add-to-cart/{{ item.id }}">Add</a>
-                </div>
-
-            </div>
-
+        <!-- Product Display Section -->
+        <div class="col-md-10">
             <div class="row">
-                <p>{{ item.in_stock }} Items Left</p>
+                {% for item in items %}
+                <div class="col-md-3 mb-4">
+                    <div class="card shadow-lg rounded-lg product-card">
+                        <img src="{{ url_for('static', filename='media/' + item.product_picture.split('/')[-1]) }}" class="card-img-top" alt="{{ item.product_name }}"
+                            style="height: 250px; object-fit: cover; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate">{{ item.product_name }}</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge bg-danger">{{ item.in_stock }} Items Left</span>
+                                <div class="product-price">
+                                    <strong>Ksh {{ item.current_price }}</strong>
+                                    <small class="text-muted"><strike>Ksh {{ item.previous_price }}</strike></small>
+                                </div>
+                            </div>
+                            <a href="/add-to-cart/{{ item.id }}" class="btn btn-primary w-100 mt-3">Add to Cart</a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-
-        {% endfor %}
-
     </div>
 </div>
 
+{% endblock %}
+
+{% block styles %}
+<style>
+    .carousel-inner img {
+        object-fit: cover;
+        height: 400px;
+    }
+
+    .product-card {
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-price small {
+        color: #888;
+    }
+
+    .list-group-item {
+        font-size: 16px;
+        padding: 12px;
+        transition: background-color 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .list-group-item i {
+        margin-right: 8px;
+    }
+
+    .product-price {
+        font-size: 14px;
+        color: #2b9c56;
+    }
+
+    .badge {
+        font-size: 12px;
+        background-color: #e52b5f;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+
+    .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .carousel-caption h5 {
+        font-size: 28px;
+        font-weight: 600;
+        color: white;
+    }
+
+    .carousel-caption p {
+        font-size: 16px;
+        color: white;
+    }
+</style>
 {% endblock %}

@@ -1,37 +1,39 @@
 {% extends 'base.html' %}
 
-{% block title %} Home {% endblock %}
-
+{% block title %} Profile {% endblock %}
 
 {% block body %}
 
+<!-- Main container for profile page -->
 <div class="container my-5">
     <div class="row">
-        <h3 style="color: white;">Welcome <span class="text-capitalize">{{ customer.username }}</span></h3>
-
-        <div class="col-sm-2 border-end" style="margin-top: 20px;">
-
-            <ul class="list-unstyled">
-                <li class="d-grid"><a href="#" class="btn btn-primary">Profile</a></li>
-                <li class="d-grid"><a href="/change-password/{{ customer.id }}" class="btn btn-primary" style="margin-top: 5px;">Change Password</a></li>
-
-            </ul>
-
+        <!-- Welcome message section -->
+        <div class="col-12 text-center mb-4">
+            <h3 class="text-light">Welcome, <span class="text-capitalize">{{ customer.username }}</span></h3>
         </div>
 
-        <div class="col-sm-5 offset-sm-1" style="background-color: white; border-radius: 18px; margin-top: 20px;">
-            <div class="row">
+        <!-- Sidebar for navigation -->
+        <div class="col-sm-3">
+            <div class="card shadow-sm p-3" style="border-radius: 15px; background-color: #f8f9fa;">
+                <ul class="list-unstyled">
+                    <li class="mb-3"><a href="#" class="btn btn-outline-primary w-100">Profile</a></li>
+                    <li class="mb-3"><a href="/change-password/{{ customer.id }}"
+                            class="btn btn-outline-warning w-100">Change Password</a></li>
+                </ul>
+            </div>
+        </div>
 
-                <div class="col-sm-8">
-                    <div class="card m-2">
-
-                        <h3>{{ customer.username }}</h3>
-                        <p>Email: {{ customer.email }}</p>
+        <!-- Profile details section -->
+        <div class="col-sm-8 offset-sm-1">
+            <div class="card shadow-lg p-4" style="border-radius: 18px; background-color: #ffffff;">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h4 class="text-primary mb-3">{{ customer.username }}</h4>
+                        <p class="text-muted">Email: <strong>{{ customer.email }}</strong></p>
                     </div>
                 </div>
-
+                <hr>
             </div>
-
         </div>
     </div>
 </div>

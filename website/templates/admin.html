@@ -3,27 +3,55 @@
 {% block title %} Admin Page {% endblock %}
 
 {% block body %}
+<div class="container my-5">
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+        <!-- Customers Card -->
+        <div class="col">
+            <div class="card shadow-sm border-light rounded">
+                <img src="../static/images/customer.jpg" class="card-img-top" alt="Customers">
+                <div class="card-body">
+                    <h5 class="card-title">Customers</h5>
+                    <p class="card-text">View and manage customers.</p>
+                    <a href="/customers" class="btn btn-primary w-100">Go to Customers</a>
+                </div>
+            </div>
+        </div>
 
-<table class="table table-dark table-hover">
-    <thead>
-        <tr>
-            <th scope="col">Customers</th>
-            <th scope="col">Shop Items</th>
-            <th scope="col">Add Shop Items</th>
-            <th scope="col">View Orders</th>
+        <!-- Shop Items Card -->
+        <div class="col">
+            <div class="card shadow-sm border-light rounded">
+                <img src="../static/images/shop.jpg" class="card-img-top" alt="Shop Items">
+                <div class="card-body">
+                    <h5 class="card-title">Shop Items</h5>
+                    <p class="card-text">Manage shop inventory details.</p>
+                    <a href="/shop-items" class="btn btn-primary w-100">View Shop Items</a>
+                </div>
+            </div>
+        </div>
 
-        </tr>
+        <!-- Add Shop Items Card -->
+        <div class="col">
+            <div class="card shadow-sm border-light rounded">
+                <img src="../static/images/shopitem.png" class="card-img-top" alt="Add Shop Items">
+                <div class="card-body">
+                    <h5 class="card-title">Add Shop Items</h5>
+                    <p class="card-text">Add new items to your shop.</p>
+                    <a href="/add-shop-items" class="btn btn-primary w-100">Add Items</a>
+                </div>
+            </div>
+        </div>
 
-    </thead>
-    <tbody>
-        <tr>
-        <td><a href="/customers">Customers</a></td>
-        <td><a href="/shop-items">Shop Items</a></td>
-        <td><a href="/add-shop-items">Add Shop Items</a></td>
-        <td><a href="/view-orders">View Orders</a></td>
-        </tr>
-    </tbody>
-</table>
-
-
+        <!-- View Orders Card -->
+        <div class="col">
+            <div class="card shadow-sm border-light rounded">
+                <img src="../static/images/vieworder.jpg" class="card-img-top" alt="View Orders">
+                <div class="card-body">
+                    <h5 class="card-title">View Orders</h5>
+                    <p class="card-text">Manage and view customer orders.</p>
+                    <a href="/view-orders" class="btn btn-primary w-100">View Orders</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
