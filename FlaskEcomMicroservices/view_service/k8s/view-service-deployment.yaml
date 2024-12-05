@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: view-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: view-service
+  template:
+    metadata:
+      labels:
+        app: view-service
+    spec:
+      containers:
+      - name: view-service
+        image: view_service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        env:
+          - name: FLASK_APP
+            value: "main.py"
+        # Ensure you specify the correct environment variables if needed
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: view-service
+spec:
+  selector:
+    app: view-service
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: NodePort

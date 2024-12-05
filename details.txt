@@ -1,0 +1,4 @@
+flask: build web app
+flask-login: perform user authentication
+Flask-WTF:  handling forms (Form rendering & Validation)
+flask-sqlalchemy: model & database integration
