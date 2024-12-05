@@ -2,6 +2,10 @@
 ```
  kubectl apply -f postgres-deployment.yaml
  
+```
+
+# Deploy Auth Service
+```
  minikube image build -t auth_service:latest .
  
  kubectl apply -f k8s/auth-service-deployment.yaml
