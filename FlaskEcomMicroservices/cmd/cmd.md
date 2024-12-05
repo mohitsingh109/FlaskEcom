@@ -2,16 +2,6 @@
 ```
  kubectl apply -f postgres-deployment.yaml
  
-```
-
-# Deploy Auth Service
-```
- minikube image build -t auth_service:latest .
- 
- kubectl apply -f k8s/auth-service-deployment.yaml
- 
- Delete: kubectl delete deployment auth-service
- 
  kubectl exec -it postgres-f69dc968d-xs8hh -- /bin/bash
  
  psql -U auth_user -d auth_db
@@ -57,6 +47,17 @@ CREATE TABLE orders (
     CONSTRAINT fk_product FOREIGN KEY (product_link) REFERENCES product(id) ON DELETE CASCADE,
     CONSTRAINT fk_customer FOREIGN KEY (customer_link) REFERENCES customer(id) ON DELETE CASCADE
 );
+ 
+```
+
+# Deploy Auth Service
+```
+ minikube image build -t auth_service:latest .
+ 
+ kubectl apply -f k8s/auth-service-deployment.yaml
+ 
+ Delete: kubectl delete deployment auth-service
+ 
 
 ```
 ---
@@ -98,5 +99,16 @@ minikube image build -t order_service:latest .
 kubectl apply -f k8s/order-service-deployment.yaml
 
 Delete: kubectl delete deployment order-service
+
+```
+
+
+# Kubectl CMD
+
+```
+
+kubectl get po
+
+kubectl get svc
 
 ```
