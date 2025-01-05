@@ -1,6 +1,8 @@
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
+from prometheus_client import Counter, generate_latest
+
 from .models import Order, Cart, Product
 from .models import db
 import uuid
@@ -14,10 +16,18 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')
+
+
+@order_routes.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain; version=0.0.4')
+
 
 @order_routes.route('/place-order/<int:user_id>', methods=['POST'])
 def place_order(user_id):
     try:
+        REQUEST_COUNT.inc()
         data = request.json
         cart_items = data.get('cart_items', [])
         total_amount = data.get('total_amount', 0)
@@ -66,6 +76,7 @@ def place_order(user_id):
 @order_routes.route('/orders/<int:user_id>', methods=['GET'])
 def get_orders(user_id):
     try:
+        REQUEST_COUNT.inc()
         orders = Order.query.filter_by(customer_link=user_id).all()
         result = []
         for order in orders:
@@ -104,6 +115,7 @@ def get_orders(user_id):
 @order_routes.route('/orders', methods=['GET'])
 def get_all_orders():
     try:
+        REQUEST_COUNT.inc()
         orders = Order.query.all()
         result = []
         for order in orders:
@@ -141,6 +153,7 @@ def get_all_orders():
 
 @order_routes.route('/orders/order/<int:order_id>', methods=['GET', 'PUT'])
 def order_api(order_id):
+    REQUEST_COUNT.inc()
     if request.method == 'GET':
         # Fetch the order details
         order = Order.query.get(order_id)

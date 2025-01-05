@@ -2,21 +2,19 @@ import logging
 import os
 
 import requests
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, jsonify
-from flask_login import LoginManager, login_user, login_required, logout_user, current_user
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory, jsonify, session, \
+    Response
+from flask_login import LoginManager, login_required, current_user
 from flask_sqlalchemy import SQLAlchemy
+from prometheus_client import generate_latest, Counter
 from werkzeug.utils import secure_filename
 
-from .models import LoginForm, SignUpForm
 from .froms import PasswordChangeForm, ShopItemsForm, OrderForm
+from .models import LoginForm, SignUpForm
 
 # Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-handler = logging.StreamHandler()
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-handler.setFormatter(formatter)
-logger.addHandler(handler)
 
 app = Flask(__name__)
 
@@ -25,7 +23,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL',
                                                   'postgresql://auth_user:auth_password@postgres:5432/auth_db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.secret_key = 'hfdksldkslghskdghsdkgh'  # Required for session management
-
 # Initialize the database
 db = SQLAlchemy(app)
 
@@ -84,53 +81,123 @@ CART_SERVICE_URL = 'http://cart-service:5002'
 AUTH_SERVICE_URL = 'http://auth-service:5003'
 ORDER_SERVICE_URL = 'http://order-service:5004'
 
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')
+
+
+@app.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain; version=0.0.4')
+
 
 @app.route('/', methods=['GET'])
 def home():
+    REQUEST_COUNT.inc()
+    # Log the request to the home route
+    logging.info("Accessed the home page.")
 
-    if current_user.is_authenticated and current_user.id == 1:
+    # Check for JWT token in session
+    token = session.get('jwt_token')
+    user_data = None
+
+    if token:
+        try:
+            # Decode the token to retrieve user information
+            auth_service_url = f"{AUTH_SERVICE_URL}/auth/validate-token"
+            response = requests.post(auth_service_url, json={"token": token})
+            if response.status_code == 200:
+                user_data = response.json().get('user')  # Extract user info from response
+                logging.info(f"Token validated. User info: {user_data}")
+                session['user_id'] = user_data['id']
+                session['user_email'] = user_data['email']
+            else:
+                logging.warning("Invalid or expired token.")
+                flash('Invalid or expired token. Please login again.', 'error')
+                return redirect(url_for('login'))
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error validating token with auth service: {e}")
+            flash('Error during token validation. Please try again later.', 'error')
+            return redirect(url_for('login'))
+
+    # Admin redirect if authenticated and is admin
+    if user_data and user_data.get('id') == 1:
+        logging.info("Admin user detected. Redirecting to admin page.")
         return redirect('/admin-page')
 
+    # Fetch flash-sale products
     try:
+        logging.info(f"Fetching flash-sale products from {PRODUCT_SERVICE_URL}/products/flash-sale.")
         response = requests.get(f"{PRODUCT_SERVICE_URL}/products/flash-sale")
         response.raise_for_status()  # Raises an error for non-2xx responses
         items = response.json()  # Assuming the response is in JSON format
+        logging.info("Successfully fetched flash-sale products.")
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching products from product service: {e}")
         items = []
 
+    # Fetch user's cart
     try:
-        if current_user.is_authenticated:
-            cart_service_url = f"{CART_SERVICE_URL}/cart/{current_user.id}"
+        if user_data:
+            cart_service_url = f"{CART_SERVICE_URL}/cart/{user_data['id']}"
+            logging.info(f"Fetching cart for user ID {user_data['id']} from {cart_service_url}.")
             cart_response = requests.get(cart_service_url)
             cart_response.raise_for_status()
             cart = cart_response.json()
+            logging.info("Successfully fetched user's cart.")
         else:
+            logging.info("User not authenticated. Skipping cart retrieval.")
             cart = []
-
     except requests.exceptions.RequestException as e:
         logging.error(f"Error fetching cart from cart service: {e}")
         cart = []
 
+    # Render the home page
+    logging.info("Rendering the home page.")
     return render_template('home.html', items=items, cart=cart)
 
 
 @app.route('/media/<filename>')
 def media(filename):
+    REQUEST_COUNT.inc()
     return send_from_directory(os.path.join(app.root_path, 'media'), filename)
 
 
 @app.route('/cart')
-@login_required
 def show_cart():
+    REQUEST_COUNT.inc()
     try:
-        # Call Cart Service to fetch cart items for the current user
-        response = requests.get(f"{CART_SERVICE_URL}/cart/{current_user.id}")
+        # Check for JWT token in session
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to access the cart.", "error")
+            return redirect(url_for('login'))
+
+        user_data = None
+        # Validate the token with Auth-Service
+        try:
+            auth_service_url = f"{AUTH_SERVICE_URL}/auth/validate-token"
+            response = requests.post(auth_service_url, json={"token": token})
+            if response.status_code == 200:
+                user_data = response.json().get('user')  # Extract user info from Auth-Service
+                session['user_id'] = user_data['id']
+                session['user_email'] = user_data['email']
+                logging.info(f"Token validated. User info: {user_data}")
+            else:
+                logging.warning("Invalid or expired token.")
+                flash("Invalid or expired token. Please login again.", "error")
+                return redirect(url_for('login'))
+        except requests.exceptions.RequestException as e:
+            logging.error(f"Error validating token with auth service: {e}")
+            flash("Error during token validation. Please try again later.", "error")
+            return redirect(url_for('login'))
+
+        # Call Cart Service to fetch cart items for the user
+        cart_service_url = f"{CART_SERVICE_URL}/cart/{user_data['id']}"
+        response = requests.get(cart_service_url)
 
         if response.status_code == 200:
             cart_items = response.json()
         else:
-            flash("Failed to fetch cart data")
+            flash("Failed to fetch cart data", "error")
             return redirect(url_for('home'))
 
         # Calculate total amount
@@ -140,18 +207,28 @@ def show_cart():
         return render_template('cart.html', cart=cart_items, amount=amount, total=total)
 
     except Exception as e:
-        flash(f"Error fetching cart: {e}")
+        logging.error(f"Unexpected error: {e}")
+        flash(f"Error fetching cart: {e}", "error")
         return redirect(url_for('home'))
 
 
 @app.route('/pluscart')
-@login_required
 def plus_cart():
+    REQUEST_COUNT.inc()
     try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            return jsonify({'error': 'You need to login to update the cart.'}), 401
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            return jsonify({'error': 'Invalid or expired token. Please login again.'}), 401
+
         cart_id = request.args.get('cart_id')
 
         # Make a request to Cart Service to increment the quantity
-        response = requests.post(f"{CART_SERVICE_URL}/cart/{cart_id}/increment", json={'user_id': current_user.id})
+        response = requests.post(f"{CART_SERVICE_URL}/cart/{cart_id}/increment", json={'user_id': user_data['id']})
 
         if response.status_code == 200:
             response_data = response.json()
@@ -162,7 +239,6 @@ def plus_cart():
                 'amount': response_data.get('amount'),
                 'total': response_data.get('total')
             }
-
             return jsonify(data)
         else:
             return jsonify({'error': 'Failed to update cart item quantity'}), 500
@@ -171,13 +247,22 @@ def plus_cart():
 
 
 @app.route('/minuscart')
-@login_required
 def minus_cart():
+    REQUEST_COUNT.inc()
     try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            return jsonify({'error': 'You need to login to update the cart.'}), 401
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            return jsonify({'error': 'Invalid or expired token. Please login again.'}), 401
+
         cart_id = request.args.get('cart_id')
 
         # Make a request to Cart Service to decrement the quantity
-        response = requests.post(f"{CART_SERVICE_URL}/cart/{cart_id}/decrement", json={'user_id': current_user.id})
+        response = requests.post(f"{CART_SERVICE_URL}/cart/{cart_id}/decrement", json={'user_id': user_data['id']})
 
         if response.status_code == 200:
             response_data = response.json()
@@ -188,7 +273,6 @@ def minus_cart():
                 'amount': response_data.get('amount'),
                 'total': response_data.get('total')
             }
-
             return jsonify(data)
         else:
             return jsonify({'error': 'Failed to update cart item quantity'}), 500
@@ -197,13 +281,22 @@ def minus_cart():
 
 
 @app.route('/removecart')
-@login_required
 def remove_cart():
+    REQUEST_COUNT.inc()
     try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            return jsonify({'error': 'You need to login to remove cart items.'}), 401
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            return jsonify({'error': 'Invalid or expired token. Please login again.'}), 401
+
         cart_id = request.args.get('cart_id')
 
         # Make a request to Cart Service to remove the cart item
-        response = requests.delete(f"{CART_SERVICE_URL}/cart/{cart_id}", json={'user_id': current_user.id})
+        response = requests.delete(f"{CART_SERVICE_URL}/cart/{cart_id}", json={'user_id': user_data['id']})
 
         if response.status_code == 200:
             response_data = response.json()
@@ -213,7 +306,6 @@ def remove_cart():
                 'amount': response_data.get('amount'),
                 'total': response_data.get('total')
             }
-
             return jsonify(data)
         else:
             return jsonify({'error': 'Failed to remove cart item'}), 500
@@ -223,35 +315,54 @@ def remove_cart():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    REQUEST_COUNT.inc()
+    logging.info("Accessed login page.")
     form = LoginForm(request.form)
 
-    if request.method == 'POST' and form.validate():
-        email = form.email.data
-        password = form.password.data
+    if request.method == 'POST':
+        if form.validate():
+            email = form.email.data
+            password = form.password.data
 
-        # Call the auth-service for authentication
-        response = requests.post(f"{AUTH_SERVICE_URL}/auth/login", json={"email": email, "password": password})
+            logging.info(f"Attempting login for email: {email}")
 
-        if response.status_code == 200:
-            user_data = response.json()  # Response containing user data
-            user = User.query.get(user_data['id'])  # Retrieve user from the database by user_id
+            try:
+                # Call the auth-service for authentication
+                response = requests.post(f"{AUTH_SERVICE_URL}/auth/login", json={"email": email, "password": password})
+                logging.info(f"Auth-service response status: {response.status_code}")
 
-            if user:
-                # Login the user
-                login_user(user)
+                if response.status_code == 200:
+                    user_data = response.json()  # Response containing user data
+                    token = user_data.get('token')  # Get the JWT token from the response
 
-                # Redirect to home page after login
-                return redirect(url_for('home'))
-            else:
-                flash('User not found!', 'error')
+                    if token:
+                        # Store the token in the client's session
+                        session['jwt_token'] = token
+                        logging.info(f"Login successful for email: {email}. JWT token stored in session.")
+
+                        # Redirect to home page after login
+                        return redirect(url_for('home'))
+                    else:
+                        logging.error(f"Auth-service did not return a token for email: {email}")
+                        flash('Authentication token not provided by auth-service!', 'error')
+                else:
+                    logging.warning(
+                        f"Login failed for email: {email}. Auth-service returned status: {response.status_code}")
+                    flash('Login Failed', 'error')
+
+            except requests.exceptions.RequestException as e:
+                logging.error(f"Error communicating with auth-service: {e}")
+                flash('Unable to connect to authentication service. Please try again later.', 'error')
         else:
-            flash('Login Failed', 'error')
+            logging.warning("Login form validation failed.")
+            flash('Invalid input. Please check your credentials.', 'error')
 
     return render_template('login.html', form=form)
 
 
 @app.route('/sign-up', methods=['GET', 'POST'])
 def sign_up():
+    REQUEST_COUNT.inc()
     form = SignUpForm()
 
     if request.method == 'POST' and form.validate():
@@ -283,16 +394,26 @@ def sign_up():
 
 
 @app.route('/logout', methods=['GET', 'POST'])
-# Feature a Flask-Form (it provide feature like login, logout etc)
-@login_required
 def log_out():
-    logout_user()
+    REQUEST_COUNT.inc()
+    session.clear()
+    flash('You have been logged out.', 'info')
     return redirect('/')
 
 
 @app.route('/profile/<int:customer_id>')
-@login_required
 def profile(customer_id):
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to view your profile.", "error")
+        return redirect(url_for('login'))
+
+    user_data = validate_token_with_auth_service(token)
+    if not user_data:
+        flash("Invalid or expired token. Please login again.", "error")
+        return redirect(url_for('login'))
+
     # Make a request to the auth-service to get the customer data
     response = requests.get(f"{AUTH_SERVICE_URL}/auth/customer/{customer_id}")
 
@@ -306,8 +427,18 @@ def profile(customer_id):
 
 
 @app.route('/change-password/<int:customer_id>', methods=['GET', 'POST'])
-@login_required
 def change_password(customer_id):
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to change your password.", "error")
+        return redirect(url_for('login'))
+
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != customer_id:
+        flash("You do not have permission to change this password.", "danger")
+        return redirect(url_for('login'))
+
     form = PasswordChangeForm()
 
     # Make a request to the auth-service to fetch the customer data
@@ -355,19 +486,52 @@ def change_password(customer_id):
 
 
 @app.route('/admin-page')
-@login_required
 def admin_page():
-    if current_user.id == 1:
-        return render_template('admin.html')
-    return render_template('404.html')
+    REQUEST_COUNT.inc()
+    try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to access this page.", "error")
+            return redirect(url_for('login'))
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            flash("Invalid or expired token. Please login again.", "error")
+            return redirect(url_for('login'))
+
+        # Check if the user is an admin (id == 1)
+        if user_data.get('id') == 1:
+            return render_template('admin.html')
+
+        return render_template('404.html')  # Not authorized for non-admin users
+
+    except Exception as e:
+        flash(f"An unexpected error occurred: {str(e)}", "error")
+        return redirect(url_for('home'))
 
 
 @app.route('/add-shop-items', methods=['GET', 'POST'])
-@login_required
 def add_shop_items():
-    if current_user.id == 1:  # Ensure only admin can add products
-        form = ShopItemsForm()
+    REQUEST_COUNT.inc()
+    try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to access this page.", "error")
+            return redirect(url_for('login'))
 
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            flash("Invalid or expired token. Please login again.", "error")
+            return redirect(url_for('login'))
+
+        # Check if the user is an admin (id == 1)
+        if user_data.get('id') != 1:
+            return render_template('404.html')  # Not authorized for non-admin users
+
+        # Handle form submission
+        form = ShopItemsForm()
         if form.validate_on_submit():
             product_name = form.product_name.data
             current_price = form.current_price.data
@@ -376,12 +540,11 @@ def add_shop_items():
             flash_sale = form.flash_sale.data
 
             file = form.product_picture.data
-
             file_name = secure_filename(file.filename)
             file_path = f'./media/{file_name}'
             file.save(file_path)
 
-            # Create the product data to be sent to product-service
+            # Create the product data to be sent to the product-service
             product_data = {
                 'product_name': product_name,
                 'current_price': current_price,
@@ -396,184 +559,235 @@ def add_shop_items():
                 response = requests.post(PRODUCT_SERVICE_URL + '/products/add', json=product_data)
 
                 if response.status_code in (200, 201):  # Successful product creation
-                    flash(f'{product_name} added Successfully')
+                    flash(f'{product_name} added successfully.', "success")
                     return render_template('add_shop_items.html', form=form)
                 else:
-                    flash('Product Not Added! Error: ' + response.text)
+                    flash(f"Product not added! Error: {response.text}", "error")
             except Exception as e:
-                flash(f'Error while connecting to product-service: {str(e)}')
+                flash(f"Error while connecting to product-service: {str(e)}", "error")
 
         return render_template('add_shop_items.html', form=form)
 
-    return render_template('404.html')  # Not authorized for non-admin users
+    except Exception as e:
+        flash(f"An unexpected error occurred: {str(e)}", "error")
+        return redirect(url_for('home'))
 
 
 @app.route('/shop-items', methods=['GET', 'POST'])
-@login_required
 def shop_items():
-    if current_user.id == 1:
-        try:
-            # Fetch the list of products from the product-service
-            product_service_url = f"{PRODUCT_SERVICE_URL}/products"
-            response = requests.get(product_service_url)
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to view the items.", "error")
+        return redirect(url_for('login'))
 
-            if response.status_code == 200:
-                items = response.json()  # Assuming the response is a list of product data
-            else:
-                flash("Error fetching products from product service!")
-                items = []
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to view these items.", "danger")
+        return redirect(url_for('login'))
 
-        except Exception as e:
-            flash(f"Error: {str(e)}")
-            items = []
-
-        return render_template('shop_items.html', items=items)
-
-    return render_template('404.html')
-
-
-@app.route('/update-item/<int:item_id>', methods=['GET', 'POST'])
-@login_required
-def update_item(item_id):
-    if current_user.id == 1:
-        form = ShopItemsForm()
-
-        # Fetch the current item details from the product-service
-        product_service_url = f"{PRODUCT_SERVICE_URL}/products/{item_id}"
+    try:
+        # Fetch the list of products from the product-service
+        product_service_url = f"{PRODUCT_SERVICE_URL}/products"
         response = requests.get(product_service_url)
 
         if response.status_code == 200:
-            item_to_update = response.json()
+            items = response.json()  # Assuming the response is a list of product data
         else:
-            flash("Item not found in product service!")
-            return redirect('/shop-items')
+            flash("Error fetching products from product service!")
+            items = []
 
-        # Pre-fill form with current item data
-        form.product_name.render_kw = {'placeholder': item_to_update['product_name']}
-        form.previous_price.render_kw = {'placeholder': item_to_update['previous_price']}
-        form.current_price.render_kw = {'placeholder': item_to_update['current_price']}
-        form.in_stock.render_kw = {'placeholder': item_to_update['in_stock']}
-        form.flash_sale.render_kw = {'placeholder': item_to_update['flash_sale']}
+    except Exception as e:
+        flash(f"Error: {str(e)}")
+        items = []
 
-        if form.validate_on_submit():
-            product_name = form.product_name.data
-            current_price = form.current_price.data
-            previous_price = form.previous_price.data
-            in_stock = form.in_stock.data
-            flash_sale = form.flash_sale.data
+    return render_template('shop_items.html', items=items)
 
-            file = form.product_picture.data
-            file_name = secure_filename(file.filename)
-            file_path = f'./media/{file_name}'
 
-            file.save(file_path)
+@app.route('/update-item/<int:item_id>', methods=['GET', 'POST'])
+def update_item(item_id):
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to update the item.", "error")
+        return redirect(url_for('login'))
 
-            try:
-                # Prepare the data to send in the PUT request
-                update_data = {
-                    'product_name': product_name,
-                    'current_price': current_price,
-                    'previous_price': previous_price,
-                    'in_stock': in_stock,
-                    'flash_sale': flash_sale,
-                    'product_picture': file_path
-                }
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to update this item.", "danger")
+        return redirect(url_for('login'))
 
-                # Send a PUT request to the product-service to update the product details
-                update_response = requests.put(f"{product_service_url}/update", json=update_data)
+    form = ShopItemsForm()
 
-                if update_response.status_code == 200:
-                    flash(f'{product_name} updated Successfully')
-                    return redirect('/shop-items')
-                else:
-                    flash('Error: Unable to update item in product service')
-            except Exception as e:
-                flash(f'Error: {str(e)}')
-                print('Product not Updated', e)
+    # Fetch the current item details from the product-service
+    product_service_url = f"{PRODUCT_SERVICE_URL}/products/{item_id}"
+    response = requests.get(product_service_url)
 
-        return render_template('update_item.html', form=form)
+    if response.status_code == 200:
+        item_to_update = response.json()
+    else:
+        flash("Item not found in product service!")
+        return redirect('/shop-items')
 
-    return render_template('404.html')
+    # Pre-fill form with current item data
+    form.product_name.render_kw = {'placeholder': item_to_update['product_name']}
+    form.previous_price.render_kw = {'placeholder': item_to_update['previous_price']}
+    form.current_price.render_kw = {'placeholder': item_to_update['current_price']}
+    form.in_stock.render_kw = {'placeholder': item_to_update['in_stock']}
+    form.flash_sale.render_kw = {'placeholder': item_to_update['flash_sale']}
+
+    if form.validate_on_submit():
+        product_name = form.product_name.data
+        current_price = form.current_price.data
+        previous_price = form.previous_price.data
+        in_stock = form.in_stock.data
+        flash_sale = form.flash_sale.data
+
+        file = form.product_picture.data
+        file_name = secure_filename(file.filename)
+        file_path = f'./media/{file_name}'
+
+        file.save(file_path)
+
+        try:
+            # Prepare the data to send in the PUT request
+            update_data = {
+                'product_name': product_name,
+                'current_price': current_price,
+                'previous_price': previous_price,
+                'in_stock': in_stock,
+                'flash_sale': flash_sale,
+                'product_picture': file_path
+            }
+
+            # Send a PUT request to the product-service to update the product details
+            update_response = requests.put(f"{product_service_url}/update", json=update_data)
+
+            if update_response.status_code == 200:
+                flash(f'{product_name} updated Successfully')
+                return redirect('/shop-items')
+            else:
+                flash('Error: Unable to update item in product service')
+        except Exception as e:
+            flash(f'Error: {str(e)}')
+            print('Product not Updated', e)
+
+    return render_template('update_item.html', form=form)
 
 
 @app.route('/delete-item/<int:item_id>', methods=['GET', 'POST'])
-@login_required
 def delete_item(item_id):
-    if current_user.id == 1:
-        try:
-            # Send a DELETE request to the product-service to delete the product
-            product_service_url = f"{PRODUCT_SERVICE_URL}/products/{item_id}"
-            response = requests.delete(product_service_url)
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to delete an item.", "error")
+        return redirect(url_for('login'))
 
-            if response.status_code == 200:
-                flash('One Item deleted successfully')
-            else:
-                flash('Error deleting item from product service!')
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to delete this item.", "danger")
+        return redirect(url_for('login'))
 
-        except Exception as e:
-            flash(f'Error: {str(e)}')
+    try:
+        product_service_url = f"{PRODUCT_SERVICE_URL}/products/{item_id}"
+        response = requests.delete(product_service_url)
 
-        return redirect('/shop-items')
+        if response.status_code == 200:
+            flash('One item deleted successfully')
+        else:
+            flash('Error deleting item from product service!')
 
-    return render_template('404.html')
+    except Exception as e:
+        flash(f'Error: {str(e)}')
+
+    return redirect('/shop-items')
 
 
 @app.route('/customers')
-@login_required
 def display_customers():
-    if current_user.id == 1:
-        try:
-            # Send a GET request to the auth-service to fetch customers
-            auth_service_url = f"{AUTH_SERVICE_URL}/customers"
-            response = requests.get(auth_service_url)
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to view customers.", "error")
+        return redirect(url_for('login'))
 
-            if response.status_code == 200:
-                customers = response.json()  # Assuming the response is a list of customers
-            else:
-                flash('Error fetching customers from auth service!')
-                customers = []
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to view customers.", "danger")
+        return redirect(url_for('login'))
 
-        except Exception as e:
-            flash(f'Error: {str(e)}')
+    try:
+        # Send a GET request to the auth-service to fetch customers
+        auth_service_url = f"{AUTH_SERVICE_URL}/customers"
+        response = requests.get(auth_service_url)
+
+        if response.status_code == 200:
+            customers = response.json()
+        else:
+            flash('Error fetching customers from auth service!')
             customers = []
 
-        return render_template('customers.html', customers=customers)
+    except Exception as e:
+        flash(f'Error: {str(e)}')
+        customers = []
 
-    return render_template('404.html')
+    return render_template('customers.html', customers=customers)
 
 
 @app.route('/add-to-cart/<int:item_id>')
-@login_required
 def add_to_cart(item_id):
+    REQUEST_COUNT.inc()
     try:
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to add items to the cart.", "error")
+            return redirect(url_for('login'))
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            flash("Invalid or expired token. Please login again.", "error")
+            return redirect(url_for('login'))
+
         # Make a request to the cart service to add the item to the cart
-        cart_service_url = f"{CART_SERVICE_URL}/cart/add-to-cart/{item_id}/{current_user.id}"
+        cart_service_url = f"{CART_SERVICE_URL}/cart/add-to-cart/{item_id}/{user_data['id']}"
         response = requests.post(cart_service_url)
 
         if response.status_code == 200:
             flash("Item successfully added to cart or quantity updated.")
         else:
-            flash("Error adding item to cart.")
+            flash("Error adding item to cart.", "error")
     except Exception as e:
-        flash(f"Error: {e}")
+        flash(f"Error: {e}", "error")
 
-    return redirect(request.referrer)
+    return redirect(request.referrer or url_for('home'))
 
 
 @app.route('/place-order')
-@login_required
 def place_order():
+    REQUEST_COUNT.inc()
     try:
-        logger.info("Fetching data from cart service for user: %s", current_user.id)
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to place an order.", "error")
+            return redirect(url_for('login'))
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            flash("Invalid or expired token. Please login again.", "error")
+            return redirect(url_for('login'))
+
+        logging.info("Fetching data from cart service for user: %s", user_data['id'])
         # Fetch the customer's cart from Cart Service
-        cart_response = requests.get(f"{CART_SERVICE_URL}/cart/{current_user.id}")
+        cart_response = requests.get(f"{CART_SERVICE_URL}/cart/{user_data['id']}")
 
         if cart_response.status_code != 200:
             flash("Failed to fetch cart items.")
             return redirect('/')
 
         cart_items = cart_response.json()
-        logger.info("Cart data len: %s", cart_items)
+        logging.info("Cart data len: %s", cart_items)
         if not cart_items:
             flash("Your cart is empty.")
             return redirect('/')
@@ -585,18 +799,18 @@ def place_order():
         order_payload = {
             "cart_items": cart_items,
             "total_amount": total_amount,
-            "customer_id": current_user.id
+            "customer_id": user_data['id']
         }
 
-        logger.info("Order payload : %s", order_payload)
+        logging.info("Order payload : %s", order_payload)
         # Send the order request to Order Service
-        order_response = requests.post(f"{ORDER_SERVICE_URL}/place-order/{current_user.id}", json=order_payload)
-        logger.info("Order placed successfully")
+        order_response = requests.post(f"{ORDER_SERVICE_URL}/place-order/{user_data['id']}", json=order_payload)
+        logging.info("Order placed successfully")
         if order_response.status_code in (201, 200):
             flash("Order placed successfully!")
             return redirect('/orders')
         else:
-            logger.warning("Order failed successfully")
+            logging.warning("Order failed successfully")
             flash("Failed to place order.")
             return redirect('/')
 
@@ -607,17 +821,28 @@ def place_order():
 
 
 @app.route('/orders')
-@login_required
 def order():
+    REQUEST_COUNT.inc()
     try:
-        # Call the Order Service to get the orders for the current user
-        response = requests.get(f"{ORDER_SERVICE_URL}/orders/{current_user.id}")
+        # Validate the token and get user data
+        token = session.get('jwt_token')
+        if not token:
+            flash("You need to login to view your orders.", "error")
+            return redirect(url_for('login'))
+
+        user_data = validate_token_with_auth_service(token)
+        if not user_data:
+            flash("Invalid or expired token. Please login again.", "error")
+            return redirect(url_for('login'))
+
+        # Call the Order Service to get the orders for the user
+        response = requests.get(f"{ORDER_SERVICE_URL}/orders/{user_data['id']}")
 
         if response.status_code == 200:
             orders = response.json()
         else:
             orders = []
-        logger.info("Order Data: %s", orders)
+        logging.info("Order Data: %s", orders)
         return render_template('orders.html', orders=orders)
 
     except Exception as e:
@@ -625,68 +850,86 @@ def order():
 
 
 @app.route('/view-orders')
-@login_required
 def order_view():
-    if current_user.id == 1:
-        try:
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to view orders.", "error")
+        return redirect(url_for('login'))
 
-            response = requests.get(f"{ORDER_SERVICE_URL}/orders")
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to view these orders.", "danger")
+        return redirect(url_for('login'))
 
-            # If the request was successful (status code 200)
-            if response.status_code == 200:
-                orders = response.json()  # Assuming the order service returns orders in JSON format
-                return render_template('view_orders.html', orders=orders)
-            else:
-                flash('Failed to retrieve orders from the order service.', 'danger')
-                return render_template('404.html')
-        except requests.RequestException as e:
-            flash(f'Error connecting to order service: {str(e)}', 'danger')
-            render_template('404.html')
+    try:
+        response = requests.get(f"{ORDER_SERVICE_URL}/orders")
 
-    return render_template('404.html')
+        if response.status_code == 200:
+            orders = response.json()
+            return render_template('view_orders.html', orders=orders)
+        else:
+            flash('Failed to retrieve orders from the order service.', 'danger')
+            return render_template('404.html')
+    except requests.RequestException as e:
+        flash(f'Error connecting to order service: {str(e)}', 'danger')
+        return render_template('404.html')
 
 
 @app.route('/update-order/<int:order_id>', methods=['GET', 'POST'])
-@login_required
 def update_order(order_id):
-    if current_user.id == 1:
-        form = OrderForm()
+    REQUEST_COUNT.inc()
+    token = session.get('jwt_token')
+    if not token:
+        flash("You need to login to update the order.", "error")
+        return redirect(url_for('login'))
 
-        # Fetch the order details from the Order Service using an API call
-        order_service_url = f'{ORDER_SERVICE_URL}/orders/order/{order_id}'
+    user_data = validate_token_with_auth_service(token)
+    if not user_data or user_data['id'] != 1:
+        flash("You do not have permission to update this order.", "danger")
+        return redirect(url_for('login'))
+
+    form = OrderForm()
+    order_service_url = f'{ORDER_SERVICE_URL}/orders/order/{order_id}'
+
+    try:
+        response = requests.get(order_service_url)
+        order = response.json() if response.status_code == 200 else None
+
+        if not order:
+            flash(f'Order {order_id} not found')
+            return redirect('/view-orders')
+    except Exception as e:
+        flash('Error fetching order details')
+        return redirect('/view-orders')
+
+    if form.validate_on_submit():
+        status = form.order_status.data
         try:
-            response = requests.get(order_service_url)
-            order = response.json() if response.status_code == 200 else None
+            update_data = {'status': status}
+            update_response = requests.put(f'{ORDER_SERVICE_URL}/orders/order/{order_id}', json=update_data)
 
-            if not order:
-                flash(f'Order {order_id} not found')
-                return redirect('/view-orders')
+            if update_response.status_code == 200:
+                flash(f'Order {order_id} updated successfully')
+            else:
+                flash(f'Failed to update Order {order_id}: {update_response.text}')
+
+            return redirect('/view-orders')
         except Exception as e:
-            print(f"Error fetching order: {e}")
-            flash('Error fetching order details')
+            flash(f'Order {order_id} not updated')
             return redirect('/view-orders')
 
-        if form.validate_on_submit():
-            status = form.order_status.data
+    return render_template('order_update.html', form=form, order=order)
 
-            # Send the updated status to the Order Service
-            try:
-                update_data = {
-                    'status': status
-                }
-                update_response = requests.put(f'{ORDER_SERVICE_URL}/orders/order/{order_id}', json=update_data)
 
-                if update_response.status_code == 200:
-                    flash(f'Order {order_id} updated successfully')
-                else:
-                    flash(f'Failed to update Order {order_id}: {update_response.text}')
-
-                return redirect('/view-orders')
-            except Exception as e:
-                logging.error(f"Error updating order: {e}")
-                flash(f'Order {order_id} not updated')
-                return redirect('/view-orders')
-
-        return render_template('order_update.html', form=form, order=order)
-
-    return render_template('404.html')
+def validate_token_with_auth_service(token):
+    try:
+        auth_service_url = f"{AUTH_SERVICE_URL}/auth/validate-token"
+        response = requests.post(auth_service_url, json={"token": token})
+        if response.status_code == 200:
+            return response.json().get('user')  # Extract user info from Auth-Service
+        else:
+            return None
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error validating token with Auth-Service: {e}")
+        return None

@@ -18,6 +18,7 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5000
+        - containerPort: 8000  # Port for Prometheus to scrape metrics
         env:
           - name: FLASK_APP
             value: "main.py"
@@ -27,11 +28,19 @@ apiVersion: v1
 kind: Service
 metadata:
   name: view-service
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
 spec:
   selector:
     app: view-service
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 5000
       targetPort: 5000
-  type: NodePort
+    - name: metrics
+      protocol: TCP
+      port: 8000  # Port to expose metrics endpoint
+      targetPort: 8000
+  type: ClusterIP

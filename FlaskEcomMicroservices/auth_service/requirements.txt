@@ -4,3 +4,6 @@ psycopg2-binary
 Flask-Migrate
 Werkzeug
 requests
+Flask-JWT-Extended==4.7.1
+PyJWT
+prometheus_client

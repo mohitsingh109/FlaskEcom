@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Navigate to the script's directory
+cd "$(dirname "$0")" || exit
+
 # Set deployment and database variables
 DEPLOYMENT_FILE="postgres-deployment.yaml"
 DB_USER="auth_user"
@@ -33,7 +36,7 @@ echo "PostgreSQL pod found: $POSTGRES_POD"
 
 # Define SQL commands
 SQL_COMMANDS=$(cat <<EOF
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
     id SERIAL PRIMARY KEY,
     email VARCHAR(100) UNIQUE NOT NULL,
     username VARCHAR(100),
@@ -41,7 +44,7 @@ CREATE TABLE customer (
     date_joined TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE product (
+CREATE TABLE IF NOT EXISTS product (
     id SERIAL PRIMARY KEY,
     product_name VARCHAR(255) NOT NULL,
     current_price DECIMAL(10, 2) NOT NULL,
@@ -52,7 +55,7 @@ CREATE TABLE product (
     date_added TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE cart (
+CREATE TABLE IF NOT EXISTS cart (
     id SERIAL PRIMARY KEY,
     product_link INT NOT NULL,
     customer_link INT NOT NULL,
@@ -61,7 +64,7 @@ CREATE TABLE cart (
     FOREIGN KEY (customer_link) REFERENCES customer(id) ON DELETE CASCADE
 );
 
-CREATE TABLE orders (
+CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     quantity INT NOT NULL,
     price FLOAT NOT NULL,

@@ -1,6 +1,7 @@
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
+from prometheus_client import Counter, generate_latest
 
 from .models import Product, db
 
@@ -14,10 +15,18 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')
+
+
+@product_routes.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain; version=0.0.4')
+
 
 # POST route to add a new product
 @product_routes.route('/products/add', methods=['POST'])
 def add_product():
+    REQUEST_COUNT.inc()
     data = request.get_json()
 
     product_name = data.get('product_name')
@@ -51,6 +60,7 @@ def add_product():
 
 @product_routes.route('/products/flash-sale', methods=['GET'])
 def flash_sale_products():
+    REQUEST_COUNT.inc()
     try:
         # Query products that are on flash sale
         flash_sale_items = Product.query.filter_by(flash_sale=True).all()
@@ -89,6 +99,7 @@ def flash_sale_products():
 
 @product_routes.route('/products/<int:item_id>/update', methods=['PUT'])
 def update_product(item_id):
+    REQUEST_COUNT.inc()
     try:
         # Fetch the item by ID
         product = Product.query.get(item_id)
@@ -115,6 +126,7 @@ def update_product(item_id):
 
 @product_routes.route('/products', methods=['GET'])
 def get_all_products():
+    REQUEST_COUNT.inc()
     try:
         # Fetch all products from the database
         products = Product.query.all()
@@ -138,6 +150,7 @@ def get_all_products():
 
 @product_routes.route('/products/<int:item_id>', methods=['DELETE'])
 def delete_product(item_id):
+    REQUEST_COUNT.inc()
     try:
         # Find the product by ID
         item_to_delete = Product.query.get(item_id)
@@ -154,6 +167,7 @@ def delete_product(item_id):
 
 @product_routes.route('/products/<int:item_id>', methods=['GET'])
 def get_product_by_id(item_id):
+    REQUEST_COUNT.inc()
     try:
         product = Product.query.get(item_id)  # Fetch product from the database using the product ID
         if not product:

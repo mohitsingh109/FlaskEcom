@@ -1,7 +1,8 @@
 import logging
 
 import requests
-from flask import Blueprint, flash, jsonify, request
+from flask import Blueprint, flash, jsonify, request, Response
+from prometheus_client import Counter, generate_latest
 
 from .models import Cart
 from .models import db
@@ -18,11 +19,18 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
+REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP Requests')
+
+
+@cart_routes.route('/metrics')
+def metrics():
+    return Response(generate_latest(), mimetype='text/plain; version=0.0.4')
+
 
 @cart_routes.route('/cart/add-to-cart/<int:item_id>/<int:user_id>', methods=['POST'])
 def add_to_cart(item_id, user_id):
     try:
-
+        REQUEST_COUNT.inc()
         logger.info("Fetching the product details")
         # Call Product Service to fetch product details
         product_service_url = f"{PRODUCT_SERVICE_URL}/products/{item_id}"
@@ -57,6 +65,7 @@ def add_to_cart(item_id, user_id):
 
 @cart_routes.route('/cart/<int:user_id>', methods=['GET'])
 def get_cart_items(user_id):
+    REQUEST_COUNT.inc()
     cart_items = Cart.query.filter_by(customer_link=user_id).all()
     result = []
     for item in cart_items:
@@ -84,6 +93,7 @@ def get_cart_items(user_id):
 @cart_routes.route('/cart/<int:cart_id>/increment', methods=['POST'])
 def increment_cart_item(cart_id):
     try:
+        REQUEST_COUNT.inc()
         # Get the cart item by ID
         cart_item = Cart.query.get(cart_id)
         if not cart_item:
@@ -113,6 +123,7 @@ def increment_cart_item(cart_id):
 @cart_routes.route('/cart/<int:cart_id>/decrement', methods=['POST'])
 def decrement_cart_item(cart_id):
     try:
+        REQUEST_COUNT.inc()
         # Get the cart item by ID
         cart_item = Cart.query.get(cart_id)
         if not cart_item:
@@ -143,4 +154,3 @@ def decrement_cart_item(cart_id):
         return jsonify(data), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-

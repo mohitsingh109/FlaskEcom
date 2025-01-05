@@ -4,6 +4,8 @@
 IMAGE_NAME="product_service:latest"
 DEPLOYMENT_FILE="k8s/product-service-deployment.yaml"
 
+kubectl delete deployment product-service
+
 # Build Docker image using Minikube
 echo "Building Docker image: $IMAGE_NAME"
 minikube image build -t $IMAGE_NAME .

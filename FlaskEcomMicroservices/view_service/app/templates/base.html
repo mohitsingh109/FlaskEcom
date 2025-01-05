@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://kit.fontawesome.com/e24507d923.js" crossorigin="anonymous"></script>
     <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css" />
+          href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.5/font/bootstrap-icons.min.css"/>
 
 
     <!-- Scripts -->
@@ -24,119 +24,118 @@
 
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
-        <div class="container-fluid">
-            <a class="navbar-brand d-flex align-items-center" href="/">
-                <i class="fa-brands fa-amazon fs-3 text-warning me-2"></i>
-                <span class="fw-bold text-secondary">Amazon</span>
-            </a>
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top shadow-sm">
+    <div class="container-fluid">
+        <a class="navbar-brand d-flex align-items-center" href="/">
+            <i class="fa-brands fa-amazon fs-3 text-warning me-2"></i>
+            <span class="fw-bold text-secondary">Amazon</span>
+        </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
-            </button>
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/">Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">About Us</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Contact Us</a>
-                    </li>
-                </ul>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link active" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About Us</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact Us</a>
+                </li>
+            </ul>
 
-                <form class="d-flex" role="search" action="/search" method="POST">
-                    <input class="form-control me-2" name="search" type="search" placeholder="Search for products">
-                    <button class="btn btn-outline-primary" type="submit">Search</button>
-                </form>
+            <form class="d-flex" role="search" action="/search" method="POST">
+                <input class="form-control me-2" name="search" type="search" placeholder="Search for products">
+                <button class="btn btn-outline-primary" type="submit">Search</button>
+            </form>
 
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        {% if cart | length < 1 %} <a class="nav-link" href="/cart">
-                            <i class="fa-solid fa-cart-shopping me-1"></i>Cart
-                            </a>
-                            {% else %}
-                            <a class="nav-link text-grey" href="/cart"><span class="badge bg-success"></span> Cart
-                                <i class="bi bi-{{ cart | length }}-square-fill"></i>
-                            </a>
-                            {% endif %}
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="fa-solid fa-heart me-1"></i>Wishlist
-                        </a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
-                            data-bs-toggle="dropdown">
-                            Account
-                        </a>
-                        <ul class="dropdown-menu">
-                            {% if current_user.is_authenticated %}
-                            <li><a class="dropdown-item" href="/profile/{{ current_user.id }}">Profile <i
-                                        class="fa-solid fa-user"></i></a></li>
-                            <li><a class="dropdown-item" href="/orders">Orders <i
-                                        class="fa-solid fa-truck-fast"></i></a></li>
-                            <li><a class="dropdown-item" href="/logout">Logout <i
-                                        class="fa-solid fa-right-from-bracket"></i></a></li>
-                            {% else %}
-                            <li><a class="dropdown-item" href="/login">Login <i
-                                        class="fa-solid fa-right-to-bracket"></i></a></li>
-                            {% endif %}
-                        </ul>
-                    </li>
-                </ul>
-            </div>
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    {% if cart | length < 1 %} <a class="nav-link" href="/cart">
+                    <i class="fa-solid fa-cart-shopping me-1"></i>Cart
+                </a>
+                    {% else %}
+                    <a class="nav-link text-grey" href="/cart"><span class="badge bg-success"></span> Cart
+                        <i class="bi bi-{{ cart | length }}-square-fill"></i>
+                    </a>
+                    {% endif %}
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fa-solid fa-heart me-1"></i>Wishlist
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                       data-bs-toggle="dropdown">
+                        Account
+                    </a>
+                    <ul class="dropdown-menu">
+                        {% if session.get('jwt_token') %}
+                        <li><a class="dropdown-item" href="/profile/{{ session.get('user_id') }}">Profile <i
+                                class="fa-solid fa-user"></i></a></li>
+                        <li><a class="dropdown-item" href="/orders">Orders <i
+                                class="fa-solid fa-truck-fast"></i></a></li>
+                        <li><a class="dropdown-item" href="/logout">Logout <i
+                                class="fa-solid fa-right-from-bracket"></i></a></li>
+                        {% else %}
+                        <li><a class="dropdown-item" href="/login">Login <i
+                                class="fa-solid fa-right-to-bracket"></i></a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+            </ul>
         </div>
-    </nav>
-
-    {% for message in get_flashed_messages() %}
-    <div class="alert alert-success alert-dismissible fade show flash-message" role="alert" id="flashMessage">
-        <strong>{{ message }}</strong>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    {% endfor %}
+</nav>
+
+{% for message in get_flashed_messages() %}
+<div class="alert alert-success alert-dismissible fade show flash-message" role="alert" id="flashMessage">
+    <strong>{{ message }}</strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endfor %}
 
 
-    <div class="container mt-3">
-        {% block body %}{% endblock %}
-    </div>
+<div class="container mt-3">
+    {% block body %}{% endblock %}
+</div>
 
-    <!-- Footer -->
-    <footer class="bg-dark text-light text-center py-3 mt-5">
-        <p>&copy; 2023 Amazon. All Rights Reserved</p>
-        <p>
-            <a href="#" class="text-light me-3"><i class="fab fa-facebook"></i></a>
-            <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
-            <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
-        </p>
-    </footer>
+<!-- Footer -->
+<footer class="bg-dark text-light text-center py-3 mt-5">
+    <p>&copy; 2023 Amazon. All Rights Reserved</p>
+    <p>
+        <a href="#" class="text-light me-3"><i class="fab fa-facebook"></i></a>
+        <a href="#" class="text-light me-3"><i class="fab fa-twitter"></i></a>
+        <a href="#" class="text-light me-3"><i class="fab fa-instagram"></i></a>
+    </p>
+</footer>
 
-    <script src="{{ url_for( 'static', filename='js/owl.carousel.min.js') }}"></script>
+<script src="{{ url_for( 'static', filename='js/owl.carousel.min.js') }}"></script>
 
-    <script src="{{ url_for( 'static', filename='js/all.min.js') }}"></script>
+<script src="{{ url_for( 'static', filename='js/all.min.js') }}"></script>
 
-    <script src="{{ url_for( 'static', filename='js/jquery.js') }}"></script>
+<script src="{{ url_for( 'static', filename='js/jquery.js') }}"></script>
 
 
+<script src="{{ url_for( 'static', filename='js/myScript.js') }}"></script>
 
-    <script src="{{ url_for( 'static', filename='js/myScript.js') }}"></script>
-
-    <script>
-        // Auto-hide flash message after 1 seconds
-        setTimeout(function () {
-            var flashMessage = document.getElementById('flashMessage');
-            if (flashMessage) {
-                flashMessage.classList.remove('show');
-                flashMessage.classList.add('fade');
-            }
-        }, 1000); // 1 seconds delay
-    </script>
+<script>
+    // Auto-hide flash message after 1 seconds
+    setTimeout(function () {
+        var flashMessage = document.getElementById('flashMessage');
+        if (flashMessage) {
+            flashMessage.classList.remove('show');
+            flashMessage.classList.add('fade');
+        }
+    }, 1000); // 1 seconds delay
+</script>
 
 </body>
 

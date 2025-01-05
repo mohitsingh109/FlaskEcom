@@ -4,6 +4,8 @@
 IMAGE_NAME="order_service:latest"
 DEPLOYMENT_FILE="k8s/order-service-deployment.yaml"
 
+kubectl delete deployment order-service
+
 # Build Docker image using Minikube
 echo "Building Docker image: $IMAGE_NAME"
 minikube image build -t $IMAGE_NAME .
